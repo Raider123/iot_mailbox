@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Postkasten Status</title>
+
+<link rel="manifest" href="manifest.json">
+
+
+<meta name="theme-color" content="#7c5e2c">
+
+<style>
+  html{font-size:75%;}
+  body{background:#f5ecd7;font-family:'Segoe UI',Arial,sans-serif;
+       display:flex;flex-direction:column;align-items:center;margin:0;}
+
+  .container{margin-top:4vh;display:flex;flex-direction:column;align-items:center;}
+  h1{font-size:3.75vw;color:#7c5e2c;margin-bottom:1.5vh;font-weight:bold;
+     letter-spacing:.1em;text-shadow:1px 1px 0 #fffbe6;}
+
+  .postbox-img{width:140px;height:auto;user-select:none;
+               filter:drop-shadow(0 2px 8px #b8860b22);margin-bottom:1.5vh;}
+
+  #status{font-size:3vw;font-weight:bold;text-align:center;min-width:30vw;
+          background:#fffbe6;border-radius:1em;padding:0.8em 1.6em;
+          box-shadow:0 2px 16px rgba(120,100,60,.12);color:#7c5e2c;}
+
+  #logbox{margin-top:6vh;width:80vw;max-width:500px;text-align:center;}
+  #logbox h2{color:#7c5e2c;font-size:2.625vw;margin-bottom:0.8vh;}
+
+  table{width:100%;border-collapse:collapse;font-size:1.3125vw;
+        background:#fffbe6;box-shadow:0 2px 16px rgba(120,100,60,.12);
+        border-radius:8px;overflow:hidden;}
+  th,td{padding:0.3em;border-bottom:1px solid #e8dcbf;text-align:center;}
+  tr:last-child td{border-bottom:none;}
+  th{background:#e8dcbf;font-weight:bold;color:#7c5e2c;}
+
+  @media (max-width:600px){
+    html{font-size:70%;}
+    h1{font-size:7.5vw;}
+    .postbox-img{width:95px;}
+    #status{font-size:6vw;min-width:60vw;}
+    #logbox h2,table{font-size:2.4375vw;}
+  }
+</style>
+</head>
+
+
+<body>
+  <div class="container">
+    <h1>Postkasten</h1>
+
+    <img src="https://cdn-icons-png.flaticon.com/512/12440/12440473.png"
+         alt="Postkasten" class="postbox-img" draggable="false">
+
+    <div id="status">keine Daten</div>
+
+    <div id="logbox">
+      <h2>Verlauf</h2>
+      <table id="logtbl">
+        <thead><tr><th>Uhrzeit</th><th>Meldung</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+
+<script>
+/* ---------- Symbole ------------------------------------------------ */
+const IMG_MAIL  = 'https://cdn-icons-png.flaticon.com/512/6304/6304902.png';
+const IMG_EMPTY = 'https://cdn-icons-png.flaticon.com/512/12440/12440473.png';
+
+/* ---------- Notification-Berechtigung ------------------------------ */
+if (Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+/* ---------- Letzter bekannter Zustand (localStorage = tabübergreifend) */
+let lastState = localStorage.getItem('postbox_state') || 'EMPTY';
+
+/* ---------- Hauptfunktion ------------------------------------------ */
+async function loadData () {
+  try {
+    const res  = await fetch('mailbox.php?view=json', {cache:'no-store'});
+    const data = await res.json();                // [{ts:"...", text:"MAIL"}, …]
+
+    /* --------- STATUS & ICON -------------------------------------- */
+    const statusElem = document.getElementById('status');
+    const imgElem    = document.querySelector('.postbox-img');
+
+    if (data.length === 0) {
+      statusElem.className = '';
+      statusElem.textContent = 'Keine Daten';
+      imgElem.src = IMG_EMPTY;
+      return;
+    }
+
+    const currentState = data[0].text.trim();     // "MAIL" | "EMPTY" | sonstiges
+
+    if (currentState === 'MAIL') {
+      statusElem.className = 'mail';
+      statusElem.textContent = 'Post erkannt';
+      imgElem.src = IMG_MAIL;
+    } else if (currentState === 'EMPTY') {
+      statusElem.className = 'empty';
+      statusElem.textContent = 'Keine Post';
+      imgElem.src = IMG_EMPTY;
+    } else {
+      //statusElem.className = '';
+      //statusElem.textContent = currentState;
+      imgElem.src = IMG_EMPTY;
+    }
+
+    /* --------- Verlaufstabelle ----------------------------------- */
+    const tbody = document.querySelector('#logtbl tbody');
+    tbody.innerHTML = '';
+    data.forEach(row => {
+      const time = row.ts.replace('T',' ').slice(0,19);
+      tbody.insertAdjacentHTML('beforeend',
+        `<tr><td>${time}</td><td>${row.text}</td></tr>`);
+    });
+
+     /* --------- Desktop-Notification bei neuer Post --------------- */
+    if (currentState === 'MAIL' && lastState !== 'MAIL' &&
+        Notification.permission === 'granted') {
+      new Notification('📫 Neue Post im Briefkasten!');
+    }
+    lastState = currentState;
+    localStorage.setItem('postbox_state', currentState);
+
+  } catch (err) {
+    console.error('Fehler beim Laden der Daten:', err);
+  }
+}
+
+/* ---------- Initial laden + alle 20 s aktualisieren --------------- */
+loadData();
+setInterval(loadData, 10000);
+</script>
+
+
+
+</body>
+</html>
