@@ -1,6 +1,6 @@
 # 📬 IoT Mailbox – Automatic Mail Delivery Notification
 
-![System Overview](media/mailbox_website.jpg)
+![System Overview](media/mailbox_website.png)
 
 ---
 
@@ -47,4 +47,24 @@ Functions:
 
 ### 📣 Optional Push Notifications via *ntfy*
 
-Receive instant alerts when new mail arrives:
+Receive instant alerts when new mail arrives: https://ntfy.sh/
+
+## 🔄 Workflow
+
+![Workflow Diagram](media/workflow.png)
+
+### 👥 Authors
+
+| Name | Role |
+|------|------|
+| **Raid Dokhan** | Development & System Integration |
+| **Anas Homsi** | Presentation & Backend Configuration |
+
+Project Timeline: **Summer Term 2025**
+
+---
+
+### 📄 License
+
+This project is provided **for educational and non-commercial purposes**.  
+Feel free to fork, improve, and adapt. 👍
